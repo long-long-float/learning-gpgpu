@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
     cl::Program program(context, code);
     program.build({devices[0]});
 
-    cl::Kernel kernel(program, "KERNEL");
+    cl::Kernel kernel(program, "grayscale");
 
     const png::uint_32 width = image.get_width();
     const png::uint_32 height = image.get_height();
@@ -72,7 +72,8 @@ int main(int argc, char *argv[])
 
     kernel.setArg(0, data);
     kernel.setArg(1, result);
-    kernel.setArg(2, data_count);
+    kernel.setArg(2, (int)width);
+    kernel.setArg(3, (int)height);
 
     cl::Event event;
     cl::CommandQueue queue(context, devices[0], CL_QUEUE_PROFILING_ENABLE);
@@ -80,7 +81,7 @@ int main(int argc, char *argv[])
     queue.enqueueWriteBuffer(data, CL_TRUE, 0, data_size, reinterpret_cast<void*>(raw_data.data()));
 
     queue.enqueueNDRangeKernel(
-        kernel, cl::NullRange, cl::NDRange(1), cl::NullRange, nullptr, &event);
+        kernel, cl::NullRange, cl::NDRange(width, height), cl::NullRange, nullptr, &event);
     event.wait();
 
     vector<byte> raw_result(raw_data.size());
