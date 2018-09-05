@@ -17,12 +17,14 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-  if (argc != 2) {
-    cerr << "Usage: " << argv[0] << " file" << endl;
+  if (argc != 3) {
+    cerr << "Usage: " << argv[0] << " kernel_name file" << endl;
     return 1;
   }
 
-  const string image_path(argv[1]);
+  const string kernel_name(argv[1]);
+
+  const string image_path(argv[2]);
   png::image<png::rgb_pixel> image(image_path);
 
   try {
@@ -47,7 +49,7 @@ int main(int argc, char *argv[])
     cl::Program program(context, code);
     program.build({devices[0]});
 
-    cl::Kernel kernel(program, "grayscale");
+    cl::Kernel kernel(program, kernel_name.c_str());
 
     const png::uint_32 width = image.get_width();
     const png::uint_32 height = image.get_height();
