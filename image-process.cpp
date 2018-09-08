@@ -86,6 +86,10 @@ int main(int argc, char *argv[])
         kernel, cl::NullRange, cl::NDRange(width, height), cl::NullRange, nullptr, &event);
     event.wait();
 
+    cl_ulong start = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+    cl_ulong end   = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
+    std::cout << "execution time: " << static_cast<double>(end - start) * 1e-3f << " us" << std::endl;
+
     vector<byte> raw_result(raw_data.size());
     queue.enqueueReadBuffer(result, CL_TRUE, 0, data_size, reinterpret_cast<void*>(raw_result.data()));
 
