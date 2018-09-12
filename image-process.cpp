@@ -50,7 +50,18 @@ int main(int argc, char *argv[])
     ifstream kernel_ifs("image-process.cl");
     const string code = string(istreambuf_iterator<char>(kernel_ifs), istreambuf_iterator<char>());
     cl::Program program(context, code);
-    program.build({devices[0]});
+    try {
+      program.build({devices[0]});
+    } catch (cl::Error const& ex) {
+      if (ex.err() == CL_BUILD_PROGRAM_FAILURE) {
+        auto buildlog = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(devices[0]);
+        cerr << "Build Error: " << buildlog << endl;
+        return 1;
+      }
+      else {
+        throw ex;
+      }
+    }
 
     cl::Kernel kernel(program, kernel_name.c_str());
 
