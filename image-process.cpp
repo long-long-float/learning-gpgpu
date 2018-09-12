@@ -23,6 +23,7 @@ int main(int argc, char *argv[])
   }
 
   const string kernel_name(argv[1]);
+  const bool use_workgroup = kernel_name == "edge_use_local_mem";
 
   const string image_path(argv[2]);
   png::image<png::rgb_pixel> image(image_path);
@@ -43,6 +44,8 @@ int main(int argc, char *argv[])
     auto devices = context.getInfo<CL_CONTEXT_DEVICES>();
 
     cout << "Using device: " << devices[0].getInfo<CL_DEVICE_NAME>() << endl;
+    cout << "\tLocal memory size: " << devices[0].getInfo<CL_DEVICE_LOCAL_MEM_SIZE>() << endl;
+    cout << "\tMax workgroup size: " << devices[0].getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>() << endl;
 
     ifstream kernel_ifs("image-process.cl");
     const string code = string(istreambuf_iterator<char>(kernel_ifs), istreambuf_iterator<char>());
@@ -54,6 +57,8 @@ int main(int argc, char *argv[])
     const png::uint_32 width = image.get_width();
     const png::uint_32 height = image.get_height();
     const int data_count = width * height * 3; // rgb
+    const png::uint_32 local_work_col = 32;
+    const png::uint_32 local_work_row = 32;
 
     // convert image to byte sequence
     vector<byte> raw_data(data_count);
@@ -83,7 +88,10 @@ int main(int argc, char *argv[])
     queue.enqueueWriteBuffer(data, CL_TRUE, 0, data_size, reinterpret_cast<void*>(raw_data.data()));
 
     queue.enqueueNDRangeKernel(
-        kernel, cl::NullRange, cl::NDRange(width, height), cl::NullRange, nullptr, &event);
+        kernel, cl::NullRange,
+        (use_workgroup ? cl::NDRange(ceil(static_cast<float>(width) / local_work_col) * local_work_col, ceil(static_cast<float>(height) / local_work_row) * local_work_row) : cl::NDRange(width, height)),
+        (use_workgroup ? cl::NDRange(local_work_col, local_work_row) : cl::NullRange),
+        nullptr, &event);
     event.wait();
 
     cl_ulong start = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
@@ -103,7 +111,7 @@ int main(int argc, char *argv[])
             raw_result[idx + 2]);
       }
     }
-    result_image.write("result.png");
+    result_image.write("result-" + kernel_name + ".png");
 
     cout << "done!" << endl;
 
