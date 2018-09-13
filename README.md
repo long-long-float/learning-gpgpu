@@ -8,3 +8,8 @@ $ bin/image-process KERNEL lenna.png
 
 `KERNEL`: see `image-process.cl`
 
+```console
+$ bin/ray-tracing sphere
+```
+
+![sphere](result-sphere.png)

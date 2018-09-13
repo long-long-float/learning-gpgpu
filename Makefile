@@ -3,6 +3,7 @@ COMPILER = sudo nvidia-docker run --rm -v `pwd`:/gpu -it gpu g++ -std=c++11
 all: image-process
 
 image-process: image-process.cpp
+ray-tracing: ray-tracing.cpp
 
 %: %.cpp
 	# `libpng-config ...` expands at outer docker container.
