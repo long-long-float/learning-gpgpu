@@ -1,7 +1,7 @@
 #define LOCAL_WORK_COL 32
 #define LOCAL_WORK_ROW 32
 
-uint pos2idx(uint x, uint y, uint w) { return (y * w + x) * 3; }
+inline uint pos2idx(uint x, uint y, uint w) { return (y * w + x) * 3; }
 
 kernel void grayscale(const global uchar* restrict image,
                    global uchar* result,
@@ -50,11 +50,8 @@ kernel void edge_use_local_mem(const global uchar* restrict image,
 
     if (x < 1 || (width - 1) <= x || y < 1 || (height - 1) <= y) return;
 
-    const uint index = (y * width + x) * 3,
-               lindex = ((ly + 1) * (lwidth + 2) + (lx + 1)) * 3;
-
     for (int i = 0; i < 3; i++) {
-        local_image[lindex + i] = image[index + i];
+        local_image[pos2idx(lx + 1, ly + 1, LOCAL_WORK_COL + 2) + i] = image[pos2idx(x, y, width) + i];
     }
     if (ly == 0) {
         for (int i = 0; i < 3; i++) local_image[pos2idx(1 + lx, 0, LOCAL_WORK_COL + 2) + i] = image[pos2idx(x, y - 1, width) + i];
@@ -82,7 +79,7 @@ kernel void edge_use_local_mem(const global uchar* restrict image,
             // y
             - local_image[pos2idx(lx + 1, ly, LOCAL_WORK_COL + 2) + i]
             + local_image[pos2idx(lx + 1, ly + 2, LOCAL_WORK_COL + 2) + i];
-        result[index + i] = 255 - max(c, 0);
+        result[pos2idx(x, y, width) + i] = 255 - max(c, 0);
     }
 }
 
