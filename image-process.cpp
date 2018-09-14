@@ -44,8 +44,9 @@ int main(int argc, char *argv[])
     auto devices = context.getInfo<CL_CONTEXT_DEVICES>();
 
     cout << "Using device: " << devices[0].getInfo<CL_DEVICE_NAME>() << endl;
-    cout << "\tLocal memory size: " << devices[0].getInfo<CL_DEVICE_LOCAL_MEM_SIZE>() << endl;
+    cout << "\tLocal memory size: " << devices[0].getInfo<CL_DEVICE_LOCAL_MEM_SIZE>() << "B" << endl;
     cout << "\tMax workgroup size: " << devices[0].getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>() << endl;
+    cout << "\tConstant buffer size: " << devices[0].getInfo<CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE>() << "B" << endl;
 
     ifstream kernel_ifs("image-process.cl");
     const string code = string(istreambuf_iterator<char>(kernel_ifs), istreambuf_iterator<char>());

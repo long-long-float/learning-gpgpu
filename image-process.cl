@@ -44,6 +44,8 @@ kernel void edge_use_local_mem(const global uchar* restrict image,
                ly = get_local_id(1);
     const uint lwidth = get_local_size(0),
                lheight = get_local_size(1);
+    const uint left = get_group_id(0) * lwidth,
+               up = get_group_id(1) * lheight;
 
     /* __local uchar local_image[lwidth * lheight]; */
     __local uchar local_image[(LOCAL_WORK_COL + 2) * (LOCAL_WORK_ROW + 2) * 3];
@@ -53,21 +55,13 @@ kernel void edge_use_local_mem(const global uchar* restrict image,
     for (int i = 0; i < 3; i++) {
         local_image[pos2idx(lx + 1, ly + 1, LOCAL_WORK_COL + 2) + i] = image[pos2idx(x, y, width) + i];
     }
-    if (ly == 0) {
-        for (int i = 0; i < 3; i++) local_image[pos2idx(1 + lx, 0, LOCAL_WORK_COL + 2) + i] = image[pos2idx(x, y - 1, width) + i];
-    }
-    if (ly == 1) {
+    if (ly <= 1) {
         for (int i = 0; i < 3; i++) {
-            local_image[pos2idx(1 + lx, LOCAL_WORK_ROW + 1, LOCAL_WORK_COL + 2) + i] = image[pos2idx(x, y + LOCAL_WORK_ROW - 1, width) + i];
+            local_image[pos2idx(1 + lx, (LOCAL_WORK_ROW + 1) * ly, LOCAL_WORK_COL + 2) + i] = image[pos2idx(x, y + LOCAL_WORK_ROW * ly - 1, width) + i];
         }
     }
-    if (lx == 0) {
-        for (int i = 0; i < 3; i++) local_image[pos2idx(0, 1 + ly, LOCAL_WORK_COL + 2) + i] = image[pos2idx(x - 1, y, width) + i];
-    }
-    if (lx == 1) {
-        for (int i = 0; i < 3; i++) {
-            local_image[pos2idx(LOCAL_WORK_COL + 1, 1 + ly, LOCAL_WORK_COL + 2) + i] = image[pos2idx(x + LOCAL_WORK_COL - 1, y, width) + i];
-        }
+    else if (ly <= 3) {
+        for (int i = 0; i < 3; i++) local_image[pos2idx((LOCAL_WORK_COL + 1) * (ly - 2), 1 + lx, LOCAL_WORK_COL + 2) + i] = image[pos2idx(left - 1 + (LOCAL_WORK_COL + 1) * (ly - 2), up + lx, width) + i];
     }
     barrier(CLK_LOCAL_MEM_FENCE);
 
